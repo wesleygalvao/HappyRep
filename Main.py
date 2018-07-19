@@ -8,7 +8,6 @@ conn_string = "host=localhost dbname=LabBD user=postgres password=qwer20"
 conn = psycopg2.connect(conn_string)
 cursor = conn.cursor()
 
-
 @app.route('/')
 def index():
     return render_template('login.html')
@@ -127,15 +126,15 @@ def autenticar_funcionario():
     elif(request.form['trabalho'] == 'cozinha'):
         cursor.execute("""INSERT INTO "HappyRep".PROFISSIONALCOZINHA (cpf) VALUES ('%s')"""%request.form['cpf'])
         cursor.execute("""INSERT INTO "HappyRep".USUARIOS (login,senha,cpf,tipo) VALUES ('%s','senha','%s','cozinha')"""%
-            (request.form['cpf'], request.form['cpf']))
+                       (request.form['cpf'], request.form['cpf']))
     elif (request.form['trabalho'] == 'limpeza'):
         cursor.execute("""INSERT INTO "HappyRep".PROFISSIONALLIMPEZA (cpf) VALUES ('%s')""" % request.form['cpf'])
         cursor.execute("""INSERT INTO "HappyRep".USUARIOS (login,senha,cpf,tipo) VALUES ('%s','senha','%s','limpeza')"""%
-            (request.form['cpf'], request.form['cpf']))
+                       (request.form['cpf'], request.form['cpf']))
     elif (request.form['trabalho'] == 'reparo'):
         cursor.execute("""INSERT INTO "HappyRep".PROFISSIONALREPAROS (cpf,tipo) VALUES ('%s',NULL)""" % request.form['cpf'])
         cursor.execute("""INSERT INTO "HappyRep".USUARIOS (login,senha,cpf,tipo) VALUES ('%s','senha','%s','reparo')"""%
-            (request.form['cpf'], request.form['cpf']))
+                       (request.form['cpf'], request.form['cpf']))
     else:
         flash('Cargo inexistente, impossível registrar funcionário.')
         return redirect('/cadastrar_funcionario')
@@ -207,7 +206,7 @@ def autentica_precos():
     precos = request.form['precos'].split()
     for x in range(len(request.form['produtos'].split())):
         cursor.execute("""INSERT INTO "HappyRep".OFERECE (nomemarca,codfornecedor,preco) VALUES ('%s',%s,%s)"""
-                        %(produtos[x],id_forn[0],precos[x]))
+                       %(produtos[x],id_forn[0],precos[x]))
     conn.commit()
     flash('Preços de produtos do fornecedor ' + request.form['fornecedor'] + ' cadastrados com sucesso.')
     return redirect('/sistema')
