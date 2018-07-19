@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HappyRep</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.css') }}">
+  </head>
+  <body>
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul id="messages" class="list-unstyled">
+                {% for message in messages %}
+                    <li class="alert alert-success">{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        <h1>Solicitar Limpeza:</h1>
+        <form method="POST" action="/autentica_limpeza">
+            <p><label>Descrição:</label> <input class="form-control" type="text" name="descricao" required></p>
+            <p>Digite o nome dos produtos separados por espaços.</p>
+            <p><label>Produtos:</label> <input class="form-control" type="text" name="produtos" required></p>
+            <p><label>Data:</label> <input class="form-control" type="date" name="data" required></p>
+            <p><label>Horário de Início:</label> <input class="form-control" type="time" name="hora" required></p>
+            <p><button class="btn btn-primary" type="submit">Solicitar</button></p>
+        </form>
+    </div>
+</body>
+</html>

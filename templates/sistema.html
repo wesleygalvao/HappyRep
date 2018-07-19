@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HappyRep</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.css') }}">
+  </head>
+  <body>
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul id="messages" class="list-unstyled">
+                {% for message in messages %}
+                    <li class="alert alert-success">{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        <h1>HappyRep</h1>
+        <ul>
+            {% if tipo_usuario == "usuario" %}
+                <li><a href="/cadastrar_republica"><button class="btn btn-primary">Cadastrar República</button></a></li>
+                <li><a href="/participar_republica"><button class="btn btn-primary">Participar de República</button></a></li>
+                <li><a href="/solicitar_servico"><button class="btn btn-primary">Solicitar um Serviço</button></a></li>
+                <li><a href="/avaliar_servico"><button class="btn btn-primary">Avaliar um serviço</button></a></li>
+            {% endif %}
+            {% if tipo_usuario == "administrador" %}
+                <li><a href="/cadastrar_funcionario"><button class="btn btn-primary">Cadastrar Funcionário</button></a></li>
+                <li><a href="/cadastrar_produto"><button class="btn btn-primary">Cadastrar Produto</button></a></li>
+                <li><a href="/cadastrar_fornecedor"><button class="btn btn-primary">Cadastrar Fornecedor</button></a></li>
+                <li><a href="/cadastrar_precos"><button class="btn btn-primary">Cadastrar Preços de Produtos</button></a></li>
+                <li><a href="/notas_servicos"><button class="btn btn-primary">Notas dos serviços</button></a></li>
+                <li><a href="/produtos_a_comprar"><button class="btn btn-primary">Produtos a serem comprados</button></a></li>
+            {% endif %}
+            {% if tipo_usuario != "administrador" and tipo_usuario != "usuario"%}
+                <li><a href="/servicos_pendentes"><button class="btn btn-primary">Serviços pendentes</button></a></li>
+                <li><a href="/criar_cardapio"><button class="btn btn-primary">Criar cardápio</button></a></li>
+            {% endif %}
+            <li><a href="/deslogar"><button class="btn btn-danger">Deslogar</button></a></li>
+        </ul>
+    </div>
+</body>
+</html>

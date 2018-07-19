@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HappyRep</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.css') }}">
+  </head>
+  <body>
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul id="messages" class="list-unstyled">
+                {% for message in messages %}
+                    <li class="alert alert-success">{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        <h1>Produtos:</h1>
+        {%if produtos%}
+            <table style="border-collapse:collapse;width:100%;margin-bottom:10px;">
+                <tr>
+                    <th style="text-align: left;padding: 8px;border-bottom: 1px solid #ddd;">Quantidade</th>
+                    <th style="text-align: left;padding: 8px;border-bottom: 1px solid #ddd;">Produto</th>
+                    <th style="text-align: left;padding: 8px;border-bottom: 1px solid #ddd;">Preço</th>
+                </tr>
+                {%for x in range(tamanho)%}
+                    <tr>
+                        <td style="text-align: left;padding: 8px;border-bottom: 1px solid #ddd;">{{quantidades[x]}}</td>
+                        <td style="text-align: left;padding: 8px;border-bottom: 1px solid #ddd;">{{produtos[x]}}</td>
+                        <td style="text-align: left;padding: 8px;border-bottom: 1px solid #ddd;">{{precos[x]}}</td>
+                    </tr>
+                {%endfor%}
+            </table>
+        {%else%}
+            <h3>Não há produtos para serem comprados</h3>
+        {%endif%}
+        <a href="/sistema"><button class="btn btn-primary">Voltar</button></a>
+    </div>
+</body>
+</html>
