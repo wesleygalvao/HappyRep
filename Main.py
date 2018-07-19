@@ -8,6 +8,7 @@ conn_string = "host=localhost dbname=LabBD user=postgres password=qwer20"
 conn = psycopg2.connect(conn_string)
 cursor = conn.cursor()
 
+
 @app.route('/')
 def index():
     return render_template('login.html')
