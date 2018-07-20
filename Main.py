@@ -410,7 +410,7 @@ def autentica_cardapio():
     for x in range(len(produtos)):
         cursor.execute("""INSERT INTO "HappyRep".GERA (ordemservico,nomemarca) VALUES ('%s','%s')""" % (request.form['ordem'], produtos[x]))
     valor = calcula_valor(produtos, cursor)
-    cursor.execute("""SELECT "HappyRep".atualiza_servico(%s,'%s')"""%(valor,request.form['ordem']))
+    cursor.execute("""UPDATE "HappyRep".SERVICO SET VALOR = '%s' WHERE ordemservico = '%s'"""%(int(valor),request.form['ordem']))
     cursor.execute("""SELECT "HappyRep".insere_cardapio('%s','%s')"""
                    %(request.form['ordem'],request.form['descricao']))
     conn.commit()
