@@ -14,4 +14,6 @@
  **conn_string = "host=localhost dbname=NomeDoBanco user=postgres password=senha"** 
 de acordo com os parâmetros de criação do seu banco  local</p>
 
+<img https://trello-attachments.s3.amazonaws.com/5b37b92d899fa33d1bb3d37b/5b4a82d976d27f614653ee2f/5fb65332617c1e72ef7dd198cd741026/1_-_Settings.png>
+
 
