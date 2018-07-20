@@ -4,8 +4,9 @@ import psycopg2
 
 app = Flask(__name__)
 app.secret_key = 'labBD'
-conn_string = "host=lbdpgrserver.postgres.database.azure.com dbname=postgres user=lbdc@lbdpgrserver password=LABBD2018C@"
-#conn_string = "host=localhost dbname=LabBD user=postgres password=qwer20"
+#conn_string = "host=lbdpgrserver.postgres.database.azure.com dbname=postgres user=lbdc@lbdpgrserver password=LABBD2018C@"
+#Local Server do Rodrigo: conn_string = "host=localhost dbname=LabBD user=postgres password=qwer20"
+conn_string = "host=localhost dbname=LabBD user=postgres password=qwer20"
 conn = psycopg2.connect(conn_string)
 cursor = conn.cursor()
 
