@@ -1,28 +1,38 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>HappyRep</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.css') }}">
-  </head>
-  <body>
-    <div class="container">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <ul id="messages" class="list-unstyled">
-                {% for message in messages %}
-                    <li class="alert alert-success">{{ message }}</li>
-                {% endfor %}
-                </ul>
-            {% endif %}
-        {% endwith %}
-        <h1>Participar de uma República:</h1>
-        <form method="POST" action="/confirma_participacao">
-            <p>Digite o nome da república que quer participar.</p>
-            <p><label></label> <input class="form-control" type="text" name="nome" required></p>
-            <p><button class="btn btn-primary" type="submit">Participar</button></p>
-        </form>
-    </div>
+</head>
+<body>
+<div class="container">
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul id="messages" class="list-unstyled">
+        {% for message in messages %}
+        <li class="alert alert-success">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    <h1>Participar de uma República:</h1>
+    <form method="POST" action="/confirma_participacao">
+        <p>Digite o nome da república que quer participar.</p>
+        <p><label></label> <input class="form-control" type="text" name="nome" required></p>
+        <p><button class="btn btn-primary" type="submit">Participar</button></p>
+    </form>
+    <h2>Repúblicas Cadastradas:</h2>
+    {%if lista%}
+    <hr>
+    {%for x in range(tamanho)%}
+    <p><strong>República {{x + 1}}:</strong> {{ lista[x][0] }}</p>
+    <hr>
+    {%endfor%}
+    {%else%}
+    <h3>Não há repúblicas cadastradas.</h3>
+    {%endif%}
+</div>
 </body>
 </html>

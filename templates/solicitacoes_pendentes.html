@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HappyRep</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.css') }}">
+</head>
+<body>
+<div class="container">
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul id="messages" class="list-unstyled">
+        {% for message in messages %}
+        <li class="alert alert-success">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    <h1>Solicitações Efetuadas pela república {{republica}}:</h1>
+    {%if lista%}
+    <hr>
+    {%for x in range(tamanho)%}
+    <h3>Solicitação {{x + 1}}:</h3>
+    <p><strong>Ordem de Serviço:</strong> {{ lista[x][0] }}</p>
+    <p><strong>Descrição:</strong> {{ lista[x][2] }}</p>
+    <p><strong>Data:</strong> {{ lista[x][3] }}</p>
+    <p><strong>Valor:</strong> {{ lista[x][4] }}</p>
+    <hr>
+    {%endfor%}
+    <h1>VALOR TOTAL: {{total}}</h1>
+    {%else%}
+    <h3>Não há solicitações efetuadas.</h3>
+    {%endif%}
+    <a href="/sistema"><button class="btn btn-primary">Voltar</button></a>
+</div>
+</body>
+</html>

@@ -4,8 +4,6 @@ import psycopg2
 
 app = Flask(__name__)
 app.secret_key = 'labBD'
-#conn_string = "host=lbdpgrserver.postgres.database.azure.com dbname=postgres user=lbdc@lbdpgrserver password=LABBD2018C@"
-#Local Server do Rodrigo: conn_string = "host=localhost dbname=LabBD user=postgres password=qwer20"
 conn_string = "host=localhost dbname=LabBD user=postgres password=qwer20"
 conn = psycopg2.connect(conn_string)
 cursor = conn.cursor()
@@ -62,6 +60,25 @@ def sistema():
         return redirect('/')
     return render_template('sistema.html', tipo_usuario = session['tipo_usuario'])
 
+@app.route('/solicitacoes_pendentes')
+def solicitacoes_pendentes():
+    if 'usuario_logado' not in session or session['usuario_logado'] == None:
+        return redirect('/')
+    cursor.execute("""SELECT CPF FROM "HappyRep".USUARIOS WHERE login='%s'""" % session['usuario_logado'])
+    cpf = cursor.fetchone()[0]
+    cursor.execute("""SELECT IDREPUBLICA FROM "HappyRep".MORADOR WHERE CPF='%s'"""%cpf)
+    id_rep = cursor.fetchone()[0]
+    if(not id_rep):
+        flash('Você não está cadastrado em nenhuma república.')
+        return redirect('/participar_republica')
+    cursor.execute("""SELECT * FROM "HappyRep".SERVICO WHERE idrepublica =%s""" %id_rep)
+    lista = cursor.fetchall()
+    cursor.execute("""SELECT NOMEREPUBLICA FROM "HappyRep".REPUBLICA WHERE IDREPUBLICA=%s"""%id_rep)
+    republica = cursor.fetchone()[0]
+    cursor.execute("""SELECT SUM(VALOR) FROM "HappyRep".SERVICO WHERE idrepublica =%s""" %id_rep)
+    total = cursor.fetchone()[0]
+    return render_template('solicitacoes_pendentes.html', lista = lista, tamanho = len(lista), republica = republica, total = total)
+
 @app.route('/cadastrar_republica')
 def cadastrar_republica():
     if 'usuario_logado' not in session or session['usuario_logado'] == None:
@@ -74,7 +91,7 @@ def autenticar_republica():
     if(cursor.fetchone()):
         flash('República já cadastrada.')
         return redirect('/cadastrar_republica')
-    cursor.execute("""SELECT * FROM "HappyRep".REPUBLICA""")
+    cursor.execute("""SELECT * FROM "HappyRep".view_listarepublicas""")
     id_rep = len(cursor.fetchall()) + 1
     #CADASTRA REPÚBLICA
     cursor.execute("""SELECT "HappyRep".insere_republica(%s,'%s','%s','%s','%s',%s)"""%(id_rep,request.form['nome'],request.form['rua'],request.form['bairro'],
@@ -87,7 +104,9 @@ def autenticar_republica():
 def participar_republica():
     if 'usuario_logado' not in session or session['usuario_logado'] == None:
         return redirect('/')
-    return render_template('participar_republica.html')
+    cursor.execute("""SELECT * FROM "HappyRep".view_listarepublicas""")
+    lista = cursor.fetchall()
+    return render_template('participar_republica.html',lista = lista, tamanho = len(lista))
 
 @app.route('/confirma_participacao',methods =['GET','POST'])
 def confirma_participacao():
@@ -96,7 +115,7 @@ def confirma_participacao():
     if(idrep):
         cursor.execute("""SELECT cpf FROM "HappyRep".USUARIOS WHERE login = '%s'"""%session['usuario_logado'])
         cpf_usuario = cursor.fetchone()
-        cursor.execute("""UPDATE "HappyRep".MORADOR SET idrepublica = %s WHERE CPF = '%s'"""%(idrep[0],cpf_usuario[0]))
+        cursor.execute("""SELECT "HappyRep".atualiza_morador(%s,'%s')"""%(idrep[0],cpf_usuario[0]))
         conn.commit()
         flash('O usuário ' + session['usuario_logado'] + ' agora está participando da república ' + request.form['nome'])
         return redirect('/sistema')
@@ -118,6 +137,9 @@ def autenticar_funcionario():
         flash('CPF já cadastrado.')
         return redirect('/cadastrar_funcionario')
     #CADASTRA FUNCIONÁRIOS
+    if(not trabalho_valido(request.form['trabalho'])):
+        flash('Trabalho inexistente.')
+        return redirect('/cadastrar_funcionario')
     cursor.execute("""SELECT "HappyRep".insere_funcionario('%s','%s','%s','%s','%s','%s')"""%(request.form['cpf'],request.form['nome'],request.form['rg'],request.form['email'],request.form['data_nascimento'],request.form['sexo']))
     if(request.form['trabalho'] == 'nutricionista'):
         #CADASTRA NUTRICIONISTA
@@ -172,7 +194,7 @@ def autentica_fornecedor():
     if(cursor.fetchone()):
         flash('Fornecedor já registrado.')
         return redirect('/cadastrar_produto')
-    cursor.execute("""SELECT * FROM "HappyRep".FORNECEDOR""")
+    cursor.execute("""SELECT * FROM "HappyRep".view_listafornecedor""")
     id_forn = len(cursor.fetchall()) + 1
     #CADASTRA FORNECEDOR
     cursor.execute("""SELECT "HappyRep".insere_fornecedor(%s,'%s','%s')"""
@@ -201,7 +223,7 @@ def autentica_precos():
     precos = request.form['precos'].split()
     for x in range(len(request.form['produtos'].split())):
         #CADASTRA PRODUTO OFERECIDO POR FORNECEDOR
-        cursor.execute("""SELECT "HappyRep".insere_oferece('%s',%s,%s)"""
+        cursor.execute("""SELECT "HappyRep".insere_oferece('%s',%s,'%s')"""
                        %(produtos[x],id_forn[0],precos[x]))
     conn.commit()
     flash('Preços de produtos do fornecedor ' + request.form['fornecedor'] + ' cadastrados com sucesso.')
@@ -221,22 +243,25 @@ def autentica_reparo():
         if (not cursor.fetchone()):
             flash('Produto ' + produtos[x] + ' não registrado.')
             return redirect('/solicitar_limpeza')
-    cursor.execute("""SELECT * FROM "HappyRep".SERVICO""")
+    cursor.execute(""""SELECT * FROM HappyRep".view_listaservico""")
     ord_serv = len(cursor.fetchall()) + 1
     cursor.execute("""SELECT CPF FROM "HappyRep".USUARIOS WHERE login='%s'""" % session['usuario_logado'])
     cpf_usuario = cursor.fetchone()
     cursor.execute("""SELECT idrepublica FROM "HappyRep".MORADOR WHERE cpf='%s'""" % cpf_usuario[0])
     id_rep = cursor.fetchone()
-    if (not id_rep):
+    if (not id_rep[0]):
         flash('Usuário não está cadastrado em uma república.')
         return redirect('/participar_republica')
     valor = calcula_valor(produtos, cursor)
     hora_fim = calcula_hora(request.form['hora'])
     cpf = seleciona_reparo(cursor)
-    cursor.execute("""SELECT "HappyRep".insere_servico(%s,%s,'%s','%s',%s,'%s','%s')"""%(ord_serv,id_rep,request.form['descricao'],request.form['data'],valor,request.form['hora'],hora_fim))
-    cursor.execute("""SELECT "HappyRep".cria_servico_reparo(%s,'%s')""" % (ord_serv, cpf))
+    cursor.execute("""INSERT INTO "HappyRep".SERVICO (ordemservico,idrepublica,descricao,data_servico,valor,hora_inicio,hora_fim)
+                            VALUES (%s,%s,'%s','%s',%s,'%s','%s')""" % (ord_serv, id_rep[0], request.form['descricao'],
+                                                                        request.form['data'], valor,
+                                                                        request.form['hora'], hora_fim))
+    cursor.execute("""SELECT "HappyRep".cria_servico_reparo('%s','%s')""" % (ord_serv, cpf))
     for x in range(len(produtos)):
-        cursor.execute("""SELECT "HappyRep".insere_gera(%s,'%s')"""%(ord_serv,produtos[x]))
+        cursor.execute("""SELECT "HappyRep".insere_gera('%s','%s')"""%(ord_serv,produtos[x]))
     conn.commit()
     flash('Solicitação de reparo efetuada com sucesso.')
     return redirect('/sistema')
@@ -255,7 +280,7 @@ def autentica_limpeza():
         if(not cursor.fetchone()):
             flash('Produto ' + produtos[x] + ' não registrado.')
             return redirect('/solicitar_limpeza')
-    cursor.execute("""SELECT * FROM "HappyRep".SERVICO""")
+    cursor.execute("""SELECT * FROM "HappyRep".view_listaservico""")
     ord_serv = len(cursor.fetchall()) + 1
     cursor.execute("""SELECT CPF FROM "HappyRep".USUARIOS WHERE login='%s'"""%session['usuario_logado'])
     cpf_usuario = cursor.fetchone()
@@ -268,12 +293,14 @@ def autentica_limpeza():
     hora_fim = calcula_hora(request.form['hora'])
     cpf = seleciona_faxineira(cursor)
     #CADASTRO DE SERVICO
-    cursor.execute("""SELECT "HappyRep".insere_servico(%s,%s,'%s','%s',%s,'%s','%s')"""%(ord_serv,id_rep,request.form['descricao'],request.form['data'],valor,request.form['hora'],hora_fim))
+    cursor.execute("""INSERT INTO "HappyRep".SERVICO (ordemservico,idrepublica,descricao,data_servico,valor,hora_inicio,hora_fim)
+                        VALUES (%s,%s,'%s','%s',%s,'%s','%s')""" % (ord_serv, id_rep[0], request.form['descricao'], request.form['data']
+                                                                                       , valor, request.form['hora'], hora_fim))
     #CADASTRO SERVICO FAXINA
-    cursor.execute("""SELECT "HappyRep".cria_servico_faxina(%s,'%s')"""%(ord_serv,cpf))
+    cursor.execute("""SELECT "HappyRep".cria_servico_faxina('%s','%s')"""%(ord_serv,cpf))
     for x in range(len(produtos)):
         #INSERE EM GERA
-        cursor.execute("""SELECT "HappyRep".insere_gera(%s,'%s')"""%(ord_serv,produtos[x]))
+        cursor.execute("""SELECT "HappyRep".insere_gera('%s','%s')"""%(ord_serv,produtos[x]))
     conn.commit()
     flash('Solicitação de limpeza efetuada com sucesso.')
     return redirect('/sistema')
@@ -286,7 +313,7 @@ def solicita_alimentacao():
 
 @app.route('/autentica_alimentacao',methods=['GET','POST'])
 def autentica_alimentacao():
-    cursor.execute("""SELECT * FROM "HappyRep".SERVICO""")
+    cursor.execute("""SELECT * FROM "HappyRep".view_listaservico""")
     ord_serv = len(cursor.fetchall()) + 1
     cursor.execute("""SELECT CPF FROM "HappyRep".USUARIOS WHERE login='%s'"""%session['usuario_logado'])
     cpf_usuario = cursor.fetchone()
@@ -300,8 +327,10 @@ def autentica_alimentacao():
     cpf_nutricionista = seleciona_alimentacao(cursor)[0]
     cpf_cozinheira = seleciona_alimentacao(cursor)[1]
     #CADASTRO DE SERVICO
-    cursor.execute("""SELECT "HappyRep".insere_servico(%s,%s,'%s','%s',%s,'%s','%s')"""%(ord_serv,id_rep,request.form['descricao'],request.form['data'],valor,request.form['hora'],hora_fim))
-    cursor.execute("""SELECT "HappyRep".cria_servico_alimentacao (%s,'%s','%s')"""%(ord_serv,cpf_nutricionista,cpf_cozinheira))
+    cursor.execute("""INSERT INTO "HappyRep".SERVICO (ordemservico,idrepublica,descricao,data_servico,valor,hora_inicio,hora_fim)
+                        VALUES (%s,%s,'%s','%s',%s,'%s','%s')""" % (ord_serv, id_rep[0], request.form['descricao'], request.form['data']
+                                                                                       , valor, request.form['hora'], hora_fim))
+    cursor.execute("""SELECT "HappyRep".cria_servico_alimentacao ('%s','%s','%s')"""%(ord_serv,cpf_nutricionista,cpf_cozinheira))
     conn.commit()
     flash('Solicitação de alimentação efetuada com sucesso.')
     return redirect('/sistema')
@@ -330,7 +359,7 @@ def autentica_avaliacao():
         flash('Sua república não solicitou esse serviço!')
         return redirect('/avaliar_servico')
     #CADASTRA AVALIAÇÃO
-    cursor.execute("""SELECT "HappyRep".insere_avalia('%s',%s,%s)"""
+    cursor.execute("""SELECT "HappyRep".insere_avalia('%s','%s','%s')"""
                    %(cpf_usuario[0],request.form['ordem'],request.form['nota']))
     conn.commit()
     flash('Avaliação efetuada com sucesso.')
@@ -343,7 +372,7 @@ def servicos_pendentes():
     lista = []
     cursor.execute("""SELECT CPF FROM "HappyRep".USUARIOS WHERE login='%s'"""%session['usuario_logado'])
     cpf = cursor.fetchone()[0]
-    if(session['tipo_usuario'] == 'nutricao'):
+    if(session['tipo_usuario'] == 'nutricionista'):
         cursor.execute("""SELECT ordemservico_alimentacao FROM "HappyRep".ALIMENTACAO WHERE cpf_nutri ='%s'"""%cpf)
         servicos = cursor.fetchall()
     elif(session['tipo_usuario'] == 'cozinha'):
@@ -381,7 +410,7 @@ def autentica_cardapio():
     for x in range(len(produtos)):
         cursor.execute("""INSERT INTO "HappyRep".GERA (ordemservico,nomemarca) VALUES ('%s','%s')""" % (request.form['ordem'], produtos[x]))
     valor = calcula_valor(produtos, cursor)
-    cursor.execute("""UPDATE "HappyRep".SERVICO SET VALOR = %s WHERE ORDEMSERVICO='%s'"""%(valor,request.form['ordem']))
+    cursor.execute("""SELECT "HappyRep".atualiza_servico(%s,'%s')"""%(valor,request.form['ordem']))
     cursor.execute("""SELECT "HappyRep".insere_cardapio('%s','%s')"""
                    %(request.form['ordem'],request.form['descricao']))
     conn.commit()
@@ -412,7 +441,7 @@ def notas_servicos():
     medias = []
     if 'usuario_logado' not in session or session['usuario_logado'] == None:
         return redirect('/')
-    cursor.execute("""SELECT DISTINCT ordemservico FROM "HappyRep".AVALIA""")
+    cursor.execute("""SELECT * FROM "HappyRep".view_ordensservico""")
     servicos = cursor.fetchall()
     for x in range(len(servicos)):
         servicos[x] = servicos[x][0]
